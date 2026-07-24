@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ININCO · Control de Vencimientos</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#10161d">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root{
+  --steel-900:#10161d;
+  --steel-800:#1a2530;
+  --steel-750:#202d3a;
+  --steel-700:#2c3a4a;
+  --steel-600:#44586c;
+  --paper-100:#eef2f5;
+  --paper-200:#c7d1da;
+  --hazard:#f2a900;
+  --hazard-dim:#7a5b12;
+  --danger:#e2452c;
+  --ok:#3fa66a;
+  --muted:#7c8a9a;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--steel-900);
+  color:var(--paper-100);
+  font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:84px;
+}
+::selection{background:var(--hazard);color:var(--steel-900);}
+
+/* ---------- App bar ---------- */
+.appbar{
+  position:sticky;top:0;z-index:20;
+  background:linear-gradient(180deg,var(--steel-800),var(--steel-800) 80%,transparent);
+  border-bottom:1px solid var(--steel-700);
+  padding:16px 18px 12px;
+}
+.appbar .eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--hazard);
+  display:flex;align-items:center;gap:8px;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--hazard);}
+.appbar h1{
+  font-family:'Oswald',sans-serif;
+  font-weight:600;
+  font-size:22px;
+  letter-spacing:.01em;
+  margin:2px 0 0;
+  text-transform:uppercase;
+}
+.appbar .sub{
+  font-size:12.5px;color:var(--muted);margin-top:2px;
+}
+
+/* ---------- Stats strip (Resumen) ---------- */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:8px;padding:14px 18px 6px;
+}
+.stat{
+  background:var(--steel-800);
+  border:1px solid var(--steel-700);
+  border-radius:var(--radius);
+  padding:10px 8px;
+  text-align:center;
+}
+.stat .n{font-family:'Oswald',sans-serif;font-size:22px;font-weight:600;}
+.stat .l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.stat.vencido .n{color:var(--danger);}
+.stat.proximo .n{color:var(--hazard);}
+.stat.vigente .n{color:var(--ok);}
+.stat.tramite .n{color:var(--muted);}
+
+/* ---------- Filters ---------- */
+.filters{
+  display:flex;gap:6px;padding:12px 18px 4px;overflow-x:auto;
+}
+.filters button{
+  flex:0 0 auto;
+  background:var(--steel-800);
+  border:1px solid var(--steel-700);
+  color:var(--paper-200);
+  font-family:'Inter',sans-serif;
+  font-size:12.5px;font-weight:600;
+  padding:7px 13px;border-radius:20px;
+  cursor:pointer;white-space:nowrap;
+}
+.filters button.active{
+  background:var(--hazard);border-color:var(--hazard);color:var(--steel-900);
+}
+
+/* ---------- List container ---------- */
+.list{padding:10px 18px 8px;display:flex;flex-direction:column;gap:12px;}
+.empty{
+  text-align:center;color:var(--muted);font-size:13px;padding:40px 10px;
+}
+
+/* ---------- Cards ---------- */
+.card{
+  background:var(--steel-800);
+  border:1px solid var(--steel-700);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.card-head{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:12px 14px 8px;
+  gap:8px;
+}
+.card-head input.title{
+  font-family:'Oswald',sans-serif;
+  font-size:16px;font-weight:600;
+  color:var(--paper-100);
+  background:transparent;border:none;outline:none;
+  width:100%;text-transform:uppercase;letter-spacing:.01em;
+  padding:2px 0;border-bottom:1px dashed transparent;
+}
+.card-head input.title:focus{border-bottom-color:var(--hazard);}
+.del-btn{
+  background:rgba(226,69,44,.14);
+  border:1px solid rgba(226,69,44,.35);
+  color:var(--danger);
+  font-size:15px;font-weight:700;cursor:pointer;line-height:1;
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;
+}
+.del-btn:active{background:var(--danger);color:var(--paper-100);}
+
+.meta-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  padding:0 14px 10px;
+}
+.meta-row.single{grid-template-columns:1fr;}
+.field label{
+  display:block;font-size:9.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;
+}
+.field input, .field select{
+  width:100%;background:var(--steel-750);
+  border:1px solid var(--steel-700);border-radius:6px;
+  color:var(--paper-100);font-size:13px;
+  font-family:'IBM Plex Mono',monospace;
+  padding:6px 8px;outline:none;
+}
+.field input:focus, .field select:focus{border-color:var(--hazard);}
+.field select{font-family:'Inter',sans-serif;}
+
+/* placard style vencimiento chip */
+.placards{display:flex;gap:8px;padding:2px 14px 14px;flex-wrap:wrap;}
+.placard{
+  flex:1;min-width:140px;
+  border-radius:8px;
+  padding:9px 10px;
+  border:1.5px solid var(--steel-700);
+  background:var(--steel-750);
+  position:relative;
+}
+.placard .ptitle{
+  font-size:9.5px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:5px;
+}
+.placard .prow{display:flex;justify-content:space-between;align-items:center;gap:6px;}
+.placard input[type=date], .placard input[type=text]{
+  background:transparent;border:none;outline:none;
+  color:var(--paper-100);font-family:'IBM Plex Mono',monospace;
+  font-size:12px;width:100%;padding:2px 0;
+}
+.badge{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;font-weight:600;
+  padding:3px 7px;border-radius:5px;white-space:nowrap;
+}
+.badge.vencido{background:rgba(226,69,44,.18);color:var(--danger);}
+.badge.proximo{background:rgba(242,169,0,.18);color:var(--hazard);}
+.badge.vigente{background:rgba(63,166,106,.18);color:var(--ok);}
+.badge.tramite{background:rgba(124,138,154,.18);color:var(--muted);}
+.placard.vencido{border-color:var(--danger);}
+.placard.proximo{border-color:var(--hazard);}
+.placard.vigente{border-color:var(--ok);}
+
+/* resumen list item (compact) */
+.rline{
+  display:flex;align-items:center;gap:10px;
+  background:var(--steel-800);border:1px solid var(--steel-700);
+  border-left:4px solid var(--steel-700);
+  border-radius:8px;padding:11px 12px;
+}
+.rline.vencido{border-left-color:var(--danger);}
+.rline.proximo{border-left-color:var(--hazard);}
+.rline.vigente{border-left-color:var(--ok);}
+.rline .rmain{flex:1;min-width:0;}
+.rline .rtitle{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rline .rsub{font-size:11px;color:var(--muted);margin-top:1px;}
+.rline .rdays{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;text-align:right;flex:0 0 auto;}
+
+/* ---------- Config ---------- */
+.config-block{
+  background:var(--steel-800);border:1px solid var(--steel-700);
+  border-radius:var(--radius);margin:0 18px 14px;padding:14px;
+}
+.config-block h3{
+  font-family:'Oswald',sans-serif;font-size:13px;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--hazard);margin:0 0 12px;
+}
+.config-field{margin-bottom:12px;}
+.config-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.config-field input{
+  width:100%;background:var(--steel-750);border:1px solid var(--steel-700);
+  border-radius:6px;color:var(--paper-100);font-family:'Inter',sans-serif;
+  font-size:13.5px;padding:9px 10px;outline:none;
+}
+.config-field input:focus{border-color:var(--hazard);}
+.config-note{
+  font-size:11.5px;color:var(--muted);line-height:1.5;
+  background:var(--steel-750);border-radius:8px;padding:10px 12px;margin-top:4px;
+}
+.save-hint{font-size:11px;color:var(--ok);height:14px;margin-top:6px;opacity:0;transition:opacity .3s;}
+.save-hint.show{opacity:1;}
+
+/* ---------- FAB + bottom nav ---------- */
+.bottomnav{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:var(--steel-800);border-top:1px solid var(--steel-700);
+  display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+.bottomnav button{
+  flex:1;background:none;border:none;color:var(--muted);
+  font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;
+  padding:6px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;
+  text-transform:uppercase;letter-spacing:.03em;
+}
+.bottomnav button .ic{font-size:17px;}
+.bottomnav button.active{color:var(--hazard);}
+
+.hidden{display:none !important;}
+.loading{text-align:center;color:var(--muted);font-size:13px;padding:50px 10px;}
+
+/* ---------- Modal (guided flows) ---------- */
+.modal-overlay{
+  position:fixed;inset:0;z-index:50;
+  background:rgba(8,11,15,.72);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.modal-sheet{
+  width:100%;max-width:480px;
+  background:var(--steel-800);
+  border-top:1px solid var(--steel-700);
+  border-radius:16px 16px 0 0;
+  max-height:88vh;overflow-y:auto;
+  padding:16px 18px calc(20px + env(safe-area-inset-bottom));
+}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.modal-head h2{
+  font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;
+  letter-spacing:.03em;color:var(--hazard);margin:0;
+}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 6px;}
+.modal-note{font-size:11.5px;color:var(--muted);margin-bottom:14px;line-height:1.4;}
+.mfield{margin-bottom:12px;}
+.mfield label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.mfield select, .mfield input{
+  width:100%;background:var(--steel-750);border:1px solid var(--steel-700);
+  border-radius:6px;color:var(--paper-100);font-size:13.5px;
+  font-family:'Inter',sans-serif;padding:9px 10px;outline:none;
+}
+.mfield input[type=date]{font-family:'IBM Plex Mono',monospace;}
+.mfield select:focus, .mfield input:focus{border-color:var(--hazard);}
+.mbtn-primary{
+  width:100%;background:var(--hazard);color:var(--steel-900);
+  border:none;border-radius:8px;padding:12px;font-weight:700;
+  font-size:14px;cursor:pointer;margin-top:6px;
+}
+.config-action-btn{
+  width:100%;background:var(--steel-750);border:1px solid var(--steel-700);
+  color:var(--paper-100);font-family:'Inter',sans-serif;font-weight:600;
+  font-size:13.5px;padding:13px 12px;border-radius:8px;cursor:pointer;
+  margin-bottom:10px;text-align:left;display:flex;align-items:center;gap:10px;
+}
+.config-action-btn .ic{font-size:17px;}
+.config-action-btn:active{border-color:var(--hazard);}
+</style>
+</head>
+<body>
+
+<div class="appbar">
+  <div class="eyebrow"><span class="dot"></span>ININCO · PALMIRA Y OPERACIONES</div>
+  <h1>Control de Vencimientos</h1>
+  <div class="sub" id="todayLabel"></div>
+  <div class="sub" id="syncBadge" style="margin-top:3px;color:var(--muted);"></div>
+</div>
+
+<div id="root">
+  <div class="loading">Cargando datos…</div>
+</div>
+
+<div id="modalRoot"></div>
+
+<div class="bottomnav">
+  <button data-tab="resumen" class="active"><span class="ic">📋</span>Resumen</button>
+  <button data-tab="tanques"><span class="ic">🛢️</span>Tanques</button>
+  <button data-tab="cisternas"><span class="ic">🚛</span>Cisternas</button>
+  <button data-tab="config"><span class="ic">⚙️</span>Config</button>
+</div>
+
+<script>
+const STORE_TANQUES = 'vencimientos-tanques';
+const STORE_CISTERNAS = 'vencimientos-cisternas';
+const STORE_CONFIG = 'vencimientos-config';
+
+let tanques = [];
+let cisternas = [];
+let config = { correos:[], dias:7, empresa:'ININCO' };
+
+function migrateConfig(cf){
+  if(!cf) return cf;
+  if(!Array.isArray(cf.correos)){
+    cf.correos = [cf.correo1, cf.correo2, cf.correo3].filter(x => x && x.trim());
+    delete cf.correo1; delete cf.correo2; delete cf.correo3;
+  }
+  return cf;
+}
+let currentTab = 'resumen';
+let currentFilter = 'todos';
+
+const uid = () => 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
+
+const SEED_TANQUES = [
+  {id:uid(), proyecto:'ININCO - CANTERA EL PUENTE', estado:'ACTIVO',
+   en_numero:'MIPRE-2026-0000026', en_fecha:'2026-01-02', en_venc:'2030-01-02',
+   bo_numero:'0005-2025', bo_venc:'2027-03-10'},
+  {id:uid(), proyecto:'ININCO - CHANGUINOLA FINCA 4', estado:'ACTIVO',
+   en_numero:'4701', en_fecha:'2025-03-10', en_venc:'2030-03-24',
+   bo_numero:'01-2024', bo_venc:'2027-01-08'},
+  {id:uid(), proyecto:'ININCO - KANKINTU 09-056', estado:'ACTIVO',
+   en_numero:'EN TRAMITE', en_fecha:'', en_venc:'',
+   bo_numero:'025-2024', bo_venc:'2026-10-08'},
+  {id:uid(), proyecto:'ININCO - BISIRA', estado:'ACTIVO',
+   en_numero:'EN TRAMITE', en_fecha:'', en_venc:'',
+   bo_numero:'EN TRAMITE', bo_venc:''},
+  {id:uid(), proyecto:'ININCO - PALMIRA BOQUETE 17K', estado:'ACTIVO',
+   en_numero:'EN TRAMITE', en_fecha:'', en_venc:'',
+   bo_numero:'010-2026', bo_venc:'2027-05-20'},
+  {id:uid(), proyecto:'PALMIRA TK PA 10K', estado:'ACTIVO',
+   en_numero:'EN TRAMITE', en_fecha:'', en_venc:'',
+   bo_numero:'EN TRAMITE', bo_venc:''},
+  {id:uid(), proyecto:'ININCO - KANKINTU 09-056 (anterior)', estado:'REUBICADO',
+   en_numero:'MIPRE-2023-0021171', en_fecha:'2023-06-06', en_venc:'2028-06-06',
+   bo_numero:'009-2023', bo_venc:'2024-04-27'},
+  {id:uid(), proyecto:'ININCO - ALMIRANTE PA', estado:'DE BAJA',
+   en_numero:'EN TRAMITE', en_fecha:'', en_venc:'',
+   bo_numero:'022-2024', bo_venc:'2026-07-15'},
+  {id:uid(), proyecto:'ININCO - BREÑÓN 09-054', estado:'DE BAJA',
+   en_numero:'7319', en_fecha:'2023-02-28', en_venc:'2028-02-28',
+   bo_numero:'01-12-22', bo_venc:'2024-07-01'},
+];
+
+const SEED_CISTERNAS = [
+  {id:uid(), codigo:'10-02', marca:'International', modelo:'4300', placa:'836766', ubicacion:'Cantera El Puente', anual_venc:'2026-08-01', bim_venc:'2026-08-26', obs:''},
+  {id:uid(), codigo:'10-04', marca:'Freightliner', modelo:'Century', placa:'833214', ubicacion:'Cantera El Puente', anual_venc:'2027-03-13', bim_venc:'2026-07-14', obs:'Se envía a bomberos'},
+  {id:uid(), codigo:'10-05', marca:'Mack', modelo:'CH613', placa:'903965', ubicacion:'Cantera El Puente', anual_venc:'2026-02-20', bim_venc:'2026-05-15', obs:'Se envía a bomberos'},
+  {id:uid(), codigo:'10-06', marca:'International', modelo:'4300', placa:'CM3648', ubicacion:'Bonyic', anual_venc:'2026-08-12', bim_venc:'2026-08-12', obs:''},
+  {id:uid(), codigo:'10-07', marca:'International', modelo:'4300', placa:'BT8811', ubicacion:'Kankintu', anual_venc:'2027-04-07', bim_venc:'2026-08-05', obs:''},
+  {id:uid(), codigo:'12-20', marca:'Isuzu', modelo:'NQR', placa:'BT8909', ubicacion:'Cantera El Puente', anual_venc:'2026-11-09', bim_venc:'2026-07-15', obs:'Se envía a bomberos'},
+  {id:uid(), codigo:'10-08', marca:'Shacman', modelo:'', placa:'', ubicacion:'Cantera El Puente', anual_venc:'2027-04-22', bim_venc:'2026-08-31', obs:'Espera de bomberos'},
+  {id:uid(), codigo:'13-27', marca:'Toyota', modelo:'Land Cruiser', placa:'', ubicacion:'Isla Colón', anual_venc:'2026-07-04', bim_venc:'2026-06-15', obs:'Fuera de circulación (nota 13-6-2026)'},
+];
+
+// ---------- Storage tiers (checked in this order) ----------
+// 1) Firebase Realtime Database — real shared cloud, works on any device, any browser,
+//    even the file downloaded and opened standalone or packaged as an app. Configure
+//    FIREBASE_DB_URL below once and every install of this file shares the same data.
+// 2) Claude.ai's own storage — only works while this app is opened inside a Claude.ai chat.
+// 3) This device's local storage — last-resort fallback, not shared with anyone.
+const FIREBASE_DB_URL = ''; // e.g. 'https://ininco-vencimientos-default-rtdb.firebaseio.com'
+
+const hasCloud = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
+
+async function storageGet(key){
+  if(FIREBASE_DB_URL){
+    try{
+      const res = await fetch(`${FIREBASE_DB_URL}/${key}.json`);
+      if(!res.ok) throw new Error('firebase get failed');
+      return await res.json();
+    }catch(e){ console.error('firebase get error', e); return null; }
+  }
+  if(hasCloud){
+    try{
+      const r = await window.storage.get(key, true);
+      return JSON.parse(r.value);
+    }catch(e){ return null; }
+  }
+  try{
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+async function storageSet(key, val){
+  if(FIREBASE_DB_URL){
+    try{
+      await fetch(`${FIREBASE_DB_URL}/${key}.json`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(val)
+      });
+    }catch(e){ console.error('firebase save error', e); }
+    return;
+  }
+  if(hasCloud){
+    try{ await window.storage.set(key, JSON.stringify(val), true); }catch(e){ console.error('cloud save failed', e); }
+    return;
+  }
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ console.error('local save failed', e); }
+}
+
+async function loadAll(){
+  const t = await storageGet(STORE_TANQUES);
+  tanques = t || SEED_TANQUES;
+  if(!t) await storageSet(STORE_TANQUES, tanques);
+
+  const c = await storageGet(STORE_CISTERNAS);
+  cisternas = c || SEED_CISTERNAS;
+  if(!c) await storageSet(STORE_CISTERNAS, cisternas);
+
+  const cf = migrateConfig(await storageGet(STORE_CONFIG));
+  config = cf || { correos:['tuliomong@ininco.com'], dias:7, empresa:'ININCO' };
+  await storageSet(STORE_CONFIG, config);
+
+  document.getElementById('syncBadge').textContent = FIREBASE_DB_URL
+    ? '☁ Nube compartida — todos los dispositivos ven lo mismo'
+    : hasCloud
+      ? '☁ Guardado en la nube de Claude (compartido)'
+      : '📱 Guardado solo en este dispositivo';
+}
+
+async function saveTanques(){ await storageSet(STORE_TANQUES, tanques); }
+async function saveCisternas(){ await storageSet(STORE_CISTERNAS, cisternas); }
+async function saveConfig(){ await storageSet(STORE_CONFIG, config); }
+
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  if(isNaN(d)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.round((d - today) / 86400000);
+}
+
+function statusOf(dateStr){
+  const days = daysUntil(dateStr);
+  if(days === null) return {cls:'tramite', label:'En trámite', days:null};
+  const anticip = Number(config.dias) || 7;
+  if(days < 0) return {cls:'vencido', label:`Vencido hace ${Math.abs(days)} d.`, days};
+  if(days <= anticip) return {cls:'proximo', label:`Vence en ${days} d.`, days};
+  return {cls:'vigente', label:`Vence en ${days} d.`, days};
+}
+
+function fmtDate(dateStr){
+  if(!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  if(isNaN(d)) return dateStr;
+  return d.toLocaleDateString('es-PA', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+function escapeHtml(s){
+  return (s||'').toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------- RENDER: RESUMEN ---------- */
+function renderResumen(){
+  const items = [];
+  tanques.forEach(t=>{
+    if(t.en_venc || t.en_numero==='EN TRAMITE') items.push({title:t.proyecto, sub:'Sec. Nacional de Energía', ...statusOf(t.en_venc)});
+    if(t.bo_venc || t.bo_numero==='EN TRAMITE') items.push({title:t.proyecto, sub:'Bomberos', ...statusOf(t.bo_venc)});
+  });
+  cisternas.forEach(c=>{
+    items.push({title:`${c.codigo} · ${c.marca} ${c.modelo}`, sub:'Bomberos (anual)', ...statusOf(c.anual_venc)});
+    items.push({title:`${c.codigo} · ${c.marca} ${c.modelo}`, sub:'Revisión bimestral', ...statusOf(c.bim_venc)});
+  });
+
+  const counts = {vencido:0, proximo:0, vigente:0, tramite:0};
+  items.forEach(i => counts[i.cls]++);
+
+  let filtered = items;
+  if(currentFilter !== 'todos') filtered = items.filter(i => i.cls === currentFilter);
+  filtered.sort((a,b) => {
+    const da = a.days === null ? 999999 : a.days;
+    const db = b.days === null ? 999999 : b.days;
+    return da - db;
+  });
+
+  let html = `
+  <div class="stats">
+    <div class="stat vencido"><div class="n">${counts.vencido}</div><div class="l">Vencidos</div></div>
+    <div class="stat proximo"><div class="n">${counts.proximo}</div><div class="l">Próximos</div></div>
+    <div class="stat vigente"><div class="n">${counts.vigente}</div><div class="l">Vigentes</div></div>
+    <div class="stat tramite"><div class="n">${counts.tramite}</div><div class="l">En trámite</div></div>
+  </div>
+  <div class="filters">
+    ${['todos','vencido','proximo','vigente','tramite'].map(f=>`<button data-filter="${f}" class="${currentFilter===f?'active':''}">${
+      {todos:'Todos',vencido:'Vencidos',proximo:'Próximos',vigente:'Vigentes',tramite:'En trámite'}[f]
+    }</button>`).join('')}
+  </div>
+  <div class="list">`;
+
+  if(filtered.length === 0){
+    html += `<div class="empty">Nada que mostrar en este filtro.</div>`;
+  }else{
+    filtered.forEach(i=>{
+      html += `<div class="rline ${i.cls}">
+        <div class="rmain">
+          <div class="rtitle">${escapeHtml(i.title)}</div>
+          <div class="rsub">${escapeHtml(i.sub)}</div>
+        </div>
+        <div class="rdays"><span class="badge ${i.cls}">${i.label}</span></div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  document.getElementById('root').innerHTML = html;
+
+  document.querySelectorAll('.filters button').forEach(b=>{
+    b.onclick = () => { currentFilter = b.dataset.filter; renderResumen(); };
+  });
+}
+
+/* ---------- RENDER: TANQUES ---------- */
+function renderTanques(){
+  let html = `<div class="list">`;
+  if(tanques.length===0) html += `<div class="empty">Sin tanques registrados. Toca “+” para agregar uno.</div>`;
+  tanques.forEach(t=>{
+    const en = statusOf(t.en_venc);
+    const bo = statusOf(t.bo_venc);
+    html += `<div class="card" data-id="${t.id}" data-kind="tanque">
+      <div class="card-head">
+        <input class="title" data-f="proyecto" value="${escapeHtml(t.proyecto)}" placeholder="Nombre del proyecto / planta">
+        <button class="del-btn" data-del="1">✕</button>
+      </div>
+      <div class="meta-row single">
+        <div class="field">
+          <label>Estado</label>
+          <select data-f="estado">
+            ${['ACTIVO','REUBICADO','DE BAJA','INACTIVO'].map(o=>`<option value="${o}" ${t.estado===o?'selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="placards">
+        <div class="placard ${en.cls}">
+          <div class="ptitle">Sec. Nac. de Energía</div>
+          <div class="prow"><input type="text" data-f="en_numero" value="${escapeHtml(t.en_numero)}" placeholder="N° certificado"></div>
+          <div class="prow"><input type="date" data-f="en_venc" value="${t.en_venc||''}"><span class="badge ${en.cls}">${en.label}</span></div>
+        </div>
+        <div class="placard ${bo.cls}">
+          <div class="ptitle">Bomberos</div>
+          <div class="prow"><input type="text" data-f="bo_numero" value="${escapeHtml(t.bo_numero)}" placeholder="N° certificado"></div>
+          <div class="prow"><input type="date" data-f="bo_venc" value="${t.bo_venc||''}"><span class="badge ${bo.cls}">${bo.label}</span></div>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('root').innerHTML = html;
+  bindTanqueEvents();
+}
+
+function bindTanqueEvents(){
+  document.querySelectorAll('[data-kind="tanque"]').forEach(card=>{
+    const id = card.dataset.id;
+    const t = tanques.find(x=>x.id===id);
+    card.querySelectorAll('[data-f]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        t[inp.dataset.f] = inp.value;
+        saveTanques();
+        renderTanques();
+      });
+    });
+    card.querySelector('[data-del]').addEventListener('click', ()=>{
+      if(confirm('¿Eliminar este tanque?')){
+        tanques = tanques.filter(x=>x.id!==id);
+        saveTanques();
+        renderTanques();
+      }
+    });
+  });
+}
+
+/* ---------- RENDER: CISTERNAS ---------- */
+function renderCisternas(){
+  let html = `<div class="list">`;
+  if(cisternas.length===0) html += `<div class="empty">Sin cisternas registradas. Toca “+” para agregar una.</div>`;
+  cisternas.forEach(c=>{
+    const an = statusOf(c.anual_venc);
+    const bi = statusOf(c.bim_venc);
+    html += `<div class="card" data-id="${c.id}" data-kind="cisterna">
+      <div class="card-head">
+        <input class="title" data-f="codigo" value="${escapeHtml(c.codigo)}" placeholder="Código">
+        <button class="del-btn" data-del="1">✕</button>
+      </div>
+      <div class="meta-row">
+        <div class="field"><label>Marca</label><input type="text" data-f="marca" value="${escapeHtml(c.marca)}"></div>
+        <div class="field"><label>Modelo</label><input type="text" data-f="modelo" value="${escapeHtml(c.modelo)}"></div>
+      </div>
+      <div class="meta-row">
+        <div class="field"><label>Placa</label><input type="text" data-f="placa" value="${escapeHtml(c.placa)}"></div>
+        <div class="field"><label>Ubicación</label><input type="text" data-f="ubicacion" value="${escapeHtml(c.ubicacion)}"></div>
+      </div>
+      <div class="placards">
+        <div class="placard ${an.cls}">
+          <div class="ptitle">Bomberos (anual)</div>
+          <div class="prow"><input type="date" data-f="anual_venc" value="${c.anual_venc||''}"><span class="badge ${an.cls}">${an.label}</span></div>
+        </div>
+        <div class="placard ${bi.cls}">
+          <div class="ptitle">Revisión bimestral</div>
+          <div class="prow"><input type="date" data-f="bim_venc" value="${c.bim_venc||''}"><span class="badge ${bi.cls}">${bi.label}</span></div>
+        </div>
+      </div>
+      <div class="meta-row single">
+        <div class="field"><label>Observación</label><input type="text" data-f="obs" value="${escapeHtml(c.obs)}" placeholder="Notas"></div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('root').innerHTML = html;
+  bindCisternaEvents();
+}
+
+function bindCisternaEvents(){
+  document.querySelectorAll('[data-kind="cisterna"]').forEach(card=>{
+    const id = card.dataset.id;
+    const c = cisternas.find(x=>x.id===id);
+    card.querySelectorAll('[data-f]').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        c[inp.dataset.f] = inp.value;
+        saveCisternas();
+        renderCisternas();
+      });
+    });
+    card.querySelector('[data-del]').addEventListener('click', ()=>{
+      if(confirm('¿Eliminar esta cisterna?')){
+        cisternas = cisternas.filter(x=>x.id!==id);
+        saveCisternas();
+        renderCisternas();
+      }
+    });
+  });
+}
+
+/* ---------- RENDER: CONFIG ---------- */
+function flashSaved(){
+  const hint = document.getElementById('saveHint');
+  if(!hint) return;
+  hint.classList.add('show');
+  setTimeout(()=>hint.classList.remove('show'), 1500);
+}
+
+function renderConfig(){
+  if(!Array.isArray(config.correos)) config.correos = [];
+
+  let correosHtml = config.correos.map((email, i) => `
+      <div class="config-field" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;">
+        <div style="flex:1;">
+          <label>Correo destinatario ${i+1}</label>
+          <input type="email" data-correo-idx="${i}" value="${escapeHtml(email)}" placeholder="correo@ininco.com">
+        </div>
+        <button class="del-btn" data-del-correo="${i}" style="padding-bottom:9px;">✕</button>
+      </div>`).join('');
+
+  if(config.correos.length === 0){
+    correosHtml = `<div class="empty" style="padding:14px 0;">Sin correos agregados.</div>`;
+  }
+
+  const html = `
+    <div class="config-block">
+      <h3>Acciones rápidas</h3>
+      <button class="config-action-btn" id="btnActualizarTanque"><span class="ic">🛢️</span>Actualizar info tanque</button>
+      <button class="config-action-btn" id="btnActualizarCisterna"><span class="ic">🚛</span>Actualizar info cisterna</button>
+      <button class="config-action-btn" id="btnIngresarUnidad"><span class="ic">➕</span>Ingresar unidad nueva TP o cisterna</button>
+    </div>
+    <div class="config-block">
+      <h3>Correos de alerta</h3>
+      ${correosHtml}
+      <button class="filters-add" id="addCorreoBtn" style="width:100%;margin-top:4px;background:var(--steel-750);border:1px dashed var(--steel-600);color:var(--hazard);font-weight:600;font-size:13px;padding:10px;border-radius:8px;cursor:pointer;">+ Agregar correo</button>
+    </div>
+    <div class="config-block">
+      <h3>Alertas</h3>
+      <div class="config-field">
+        <label>Días de anticipación para alertar</label>
+        <input type="number" min="1" id="cf-dias" value="${config.dias}">
+      </div>
+      <div class="config-field">
+        <label>Nombre de la empresa</label>
+        <input type="text" id="cf-empresa" value="${escapeHtml(config.empresa)}">
+      </div>
+      <div class="save-hint" id="saveHint">Guardado ✓</div>
+      <div class="config-note">
+        Estos datos definen a partir de cuántos días un vencimiento se marca en ámbar en el Resumen.
+        Esta app no envía correos automáticos: es un tablero de consulta y registro
+        (ver arriba si el guardado es en la nube o solo en este dispositivo). El envío automático por
+        Outlook que tenía la macro original requeriría un servicio de correo aparte.
+      </div>
+    </div>`;
+  document.getElementById('root').innerHTML = html;
+
+  document.getElementById('btnActualizarTanque').addEventListener('click', openActualizarTanqueModal);
+  document.getElementById('btnActualizarCisterna').addEventListener('click', openActualizarCisternaModal);
+  document.getElementById('btnIngresarUnidad').addEventListener('click', openIngresarUnidadModal);
+
+  document.querySelectorAll('[data-correo-idx]').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      config.correos[Number(inp.dataset.correoIdx)] = e.target.value;
+      await saveConfig();
+      flashSaved();
+    });
+  });
+
+  document.querySelectorAll('[data-del-correo]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      config.correos.splice(Number(btn.dataset.delCorreo), 1);
+      await saveConfig();
+      renderConfig();
+    });
+  });
+
+  document.getElementById('addCorreoBtn').addEventListener('click', async ()=>{
+    config.correos.push('');
+    await saveConfig();
+    renderConfig();
+    const inputs = document.querySelectorAll('[data-correo-idx]');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  });
+
+  ['dias','empresa'].forEach(k=>{
+    document.getElementById('cf-'+k).addEventListener('change', async (e)=>{
+      config[k] = k==='dias' ? Number(e.target.value) : e.target.value;
+      await saveConfig();
+      flashSaved();
+    });
+  });
+}
+
+/* ---------- Modal helper ---------- */
+function openModal(html){
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-sheet">${html}</div>
+    </div>`;
+  document.getElementById('modalOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'modalOverlay') closeModal();
+  });
+}
+function closeModal(){
+  document.getElementById('modalRoot').innerHTML = '';
+}
+
+/* ---------- Acción 1: Actualizar info tanque (equivale a ActualizarTanque) ---------- */
+function openActualizarTanqueModal(){
+  if(tanques.length === 0){ alert('No hay tanques registrados todavía.'); return; }
+  const opciones = tanques.map(t => `<option value="${t.id}">${escapeHtml(t.proyecto)}</option>`).join('');
+  openModal(`
+    <div class="modal-head"><h2>Actualizar info tanque</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-note">Elige el proyecto y la certificación a actualizar, igual que antes con los botones de Excel.</div>
+    <div class="mfield"><label>Proyecto</label><select id="mt-proyecto">${opciones}</select></div>
+    <div class="mfield"><label>Certificación</label>
+      <select id="mt-tipo">
+        <option value="en">Secretaría Nacional de Energía (SNE)</option>
+        <option value="bo">Bomberos</option>
+      </select>
+    </div>
+    <div id="mt-camposEnergia">
+      <div class="mfield"><label>Número de certificación</label><input type="text" id="mt-numero-en" placeholder="N° certificado"></div>
+      <div class="mfield"><label>Fecha de emisión</label><input type="date" id="mt-fecha-emision"></div>
+      <div class="mfield"><label>Fecha de vencimiento</label><input type="date" id="mt-fecha-venc-en"></div>
+    </div>
+    <div id="mt-camposBomberos" class="hidden">
+      <div class="mfield"><label>Número de certificación</label><input type="text" id="mt-numero-bo" placeholder="N° certificado"></div>
+      <div class="mfield"><label>Fecha de vencimiento</label><input type="date" id="mt-fecha-venc-bo"></div>
+    </div>
+    <button class="mbtn-primary" id="mt-guardar">Guardar cambios</button>
+  `);
+
+  const syncCampos = () => {
+    const tipo = document.getElementById('mt-tipo').value;
+    document.getElementById('mt-camposEnergia').classList.toggle('hidden', tipo !== 'en');
+    document.getElementById('mt-camposBomberos').classList.toggle('hidden', tipo !== 'bo');
+  };
+  const fillFromSelection = () => {
+    const t = tanques.find(x => x.id === document.getElementById('mt-proyecto').value);
+    document.getElementById('mt-numero-en').value = t.en_numero || '';
+    document.getElementById('mt-fecha-emision').value = t.en_fecha || '';
+    document.getElementById('mt-fecha-venc-en').value = t.en_venc || '';
+    document.getElementById('mt-numero-bo').value = t.bo_numero || '';
+    document.getElementById('mt-fecha-venc-bo').value = t.bo_venc || '';
+  };
+  document.getElementById('mt-tipo').addEventListener('change', syncCampos);
+  document.getElementById('mt-proyecto').addEventListener('change', fillFromSelection);
+  fillFromSelection(); syncCampos();
+
+  document.getElementById('mt-guardar').addEventListener('click', async ()=>{
+    const t = tanques.find(x => x.id === document.getElementById('mt-proyecto').value);
+    const tipo = document.getElementById('mt-tipo').value;
+    if(tipo === 'en'){
+      t.en_numero = document.getElementById('mt-numero-en').value;
+      t.en_fecha = document.getElementById('mt-fecha-emision').value;
+      t.en_venc = document.getElementById('mt-fecha-venc-en').value;
+    }else{
+      t.bo_numero = document.getElementById('mt-numero-bo').value;
+      t.bo_venc = document.getElementById('mt-fecha-venc-bo').value;
+    }
+    await saveTanques();
+    closeModal();
+    if(currentTab === 'tanques') renderTanques();
+    else if(currentTab === 'resumen') renderResumen();
+    else renderConfig();
+  });
+}
+
+/* ---------- Acción 2: Actualizar info cisterna (equivale a ActualizarCertificacion) ---------- */
+function openActualizarCisternaModal(){
+  if(cisternas.length === 0){ alert('No hay cisternas registradas todavía.'); return; }
+  const opciones = cisternas.map(c => `<option value="${c.id}">${escapeHtml(c.codigo)} · ${escapeHtml(c.marca)} ${escapeHtml(c.modelo)}</option>`).join('');
+  openModal(`
+    <div class="modal-head"><h2>Actualizar info cisterna</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-note">Elige la unidad y qué revisión de Bomberos vas a renovar.</div>
+    <div class="mfield"><label>Unidad</label><select id="mc-unidad">${opciones}</select></div>
+    <div class="mfield"><label>Certificación</label>
+      <select id="mc-tipo">
+        <option value="anual">Anual Bomberos</option>
+        <option value="bim">Bimestral Bomberos</option>
+      </select>
+    </div>
+    <div class="mfield"><label>Nueva fecha de vencimiento</label><input type="date" id="mc-fecha"></div>
+    <button class="mbtn-primary" id="mc-guardar">Guardar cambios</button>
+  `);
+
+  const fillFromSelection = () => {
+    const c = cisternas.find(x => x.id === document.getElementById('mc-unidad').value);
+    const tipo = document.getElementById('mc-tipo').value;
+    document.getElementById('mc-fecha').value = (tipo === 'anual' ? c.anual_venc : c.bim_venc) || '';
+  };
+  document.getElementById('mc-unidad').addEventListener('change', fillFromSelection);
+  document.getElementById('mc-tipo').addEventListener('change', fillFromSelection);
+  fillFromSelection();
+
+  document.getElementById('mc-guardar').addEventListener('click', async ()=>{
+    const c = cisternas.find(x => x.id === document.getElementById('mc-unidad').value);
+    const tipo = document.getElementById('mc-tipo').value;
+    const fecha = document.getElementById('mc-fecha').value;
+    if(tipo === 'anual') c.anual_venc = fecha; else c.bim_venc = fecha;
+    await saveCisternas();
+    closeModal();
+    if(currentTab === 'cisternas') renderCisternas();
+    else if(currentTab === 'resumen') renderResumen();
+    else renderConfig();
+  });
+}
+
+/* ---------- Acción 3: Ingresar unidad nueva TP o cisterna (equivale a AgregarUnidad) ---------- */
+function openIngresarUnidadModal(){
+  openModal(`
+    <div class="modal-head"><h2>Ingresar unidad nueva</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="mfield"><label>Tipo</label>
+      <select id="mu-tipo">
+        <option value="tanque">Tanque (TP)</option>
+        <option value="cisterna">Cisterna</option>
+      </select>
+    </div>
+    <div id="mu-formTanque">
+      <div class="mfield"><label>Proyecto</label><input type="text" id="mu-t-proyecto" placeholder="Nombre del proyecto / planta"></div>
+      <div class="mfield"><label>N° certificación Energía</label><input type="text" id="mu-t-en-num" placeholder="N° certificado o EN TRAMITE"></div>
+      <div class="mfield"><label>Fecha emisión Energía</label><input type="date" id="mu-t-en-fecha"></div>
+      <div class="mfield"><label>Fecha vencimiento Energía</label><input type="date" id="mu-t-en-venc"></div>
+      <div class="mfield"><label>N° certificación Bomberos</label><input type="text" id="mu-t-bo-num" placeholder="N° certificado o EN TRAMITE"></div>
+      <div class="mfield"><label>Fecha vencimiento Bomberos</label><input type="date" id="mu-t-bo-venc"></div>
+    </div>
+    <div id="mu-formCisterna" class="hidden">
+      <div class="mfield"><label>Código</label><input type="text" id="mu-c-codigo"></div>
+      <div class="mfield"><label>Marca</label><input type="text" id="mu-c-marca"></div>
+      <div class="mfield"><label>Modelo</label><input type="text" id="mu-c-modelo"></div>
+      <div class="mfield"><label>Placa</label><input type="text" id="mu-c-placa"></div>
+      <div class="mfield"><label>Ubicación</label><input type="text" id="mu-c-ubicacion"></div>
+      <div class="mfield"><label>Fecha vencimiento Anual</label><input type="date" id="mu-c-anual"></div>
+      <div class="mfield"><label>Fecha vencimiento Bimestral</label><input type="date" id="mu-c-bim"></div>
+    </div>
+    <button class="mbtn-primary" id="mu-guardar">Agregar unidad</button>
+  `);
+
+  document.getElementById('mu-tipo').addEventListener('change', (e)=>{
+    document.getElementById('mu-formTanque').classList.toggle('hidden', e.target.value !== 'tanque');
+    document.getElementById('mu-formCisterna').classList.toggle('hidden', e.target.value !== 'cisterna');
+  });
+
+  document.getElementById('mu-guardar').addEventListener('click', async ()=>{
+    const tipo = document.getElementById('mu-tipo').value;
+    if(tipo === 'tanque'){
+      const proyecto = document.getElementById('mu-t-proyecto').value.trim();
+      if(!proyecto){ alert('Escribe el nombre del proyecto.'); return; }
+      tanques.unshift({
+        id:uid(), proyecto, estado:'ACTIVO',
+        en_numero:document.getElementById('mu-t-en-num').value,
+        en_fecha:document.getElementById('mu-t-en-fecha').value,
+        en_venc:document.getElementById('mu-t-en-venc').value,
+        bo_numero:document.getElementById('mu-t-bo-num').value,
+        bo_venc:document.getElementById('mu-t-bo-venc').value
+      });
+      await saveTanques();
+      closeModal();
+      if(currentTab==='tanques') renderTanques(); else if(currentTab==='resumen') renderResumen(); else renderConfig();
+    }else{
+      const codigo = document.getElementById('mu-c-codigo').value.trim();
+      if(!codigo){ alert('Escribe el código de la unidad.'); return; }
+      cisternas.unshift({
+        id:uid(), codigo,
+        marca:document.getElementById('mu-c-marca').value,
+        modelo:document.getElementById('mu-c-modelo').value,
+        placa:document.getElementById('mu-c-placa').value,
+        ubicacion:document.getElementById('mu-c-ubicacion').value,
+        anual_venc:document.getElementById('mu-c-anual').value,
+        bim_venc:document.getElementById('mu-c-bim').value,
+        obs:''
+      });
+      await saveCisternas();
+      closeModal();
+      if(currentTab==='cisternas') renderCisternas(); else if(currentTab==='resumen') renderResumen(); else renderConfig();
+    }
+  });
+}
+
+/* ---------- Tab switching ---------- */
+function renderCurrent(){
+  if(currentTab==='resumen') renderResumen();
+  else if(currentTab==='tanques') renderTanques();
+  else if(currentTab==='cisternas') renderCisternas();
+  else if(currentTab==='config') renderConfig();
+}
+
+document.querySelectorAll('.bottomnav button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    currentTab = b.dataset.tab;
+    document.querySelectorAll('.bottomnav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    window.scrollTo(0,0);
+    renderCurrent();
+  });
+});
+
+document.getElementById('todayLabel').textContent =
+  'Hoy: ' + new Date().toLocaleDateString('es-PA', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+
+loadAll().then(renderCurrent);
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+// Background refresh: pull the latest shared data periodically so edits made on
+// other devices show up here too, without disrupting whatever you're doing.
+if(FIREBASE_DB_URL){
+  setInterval(async ()=>{
+    if(document.activeElement && ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+    if(document.getElementById('modalOverlay')) return;
+    const [t, c] = await Promise.all([storageGet(STORE_TANQUES), storageGet(STORE_CISTERNAS)]);
+    const changed = JSON.stringify(t) !== JSON.stringify(tanques) || JSON.stringify(c) !== JSON.stringify(cisternas);
+    if(t) tanques = t;
+    if(c) cisternas = c;
+    if(changed) renderCurrent();
+  }, 20000);
+}
+</script>
+</body>
+</html>
+
+{
+  "name": "ININCO · Control de Vencimientos",
+  "short_name": "Vencimientos",
+  "description": "Control de vencimientos de certificaciones de tanques fijos y cisternas — ININCO",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10161d",
+  "theme_color": "#10161d",
+  "lang": "es",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
+
+const CACHE_NAME = 'ininco-vencimientos-v1';
+const SHELL_FILES = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_FILES))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((names) =>
+      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Network-first for navigation/data so you always get fresh data when online;
+// falls back to the cached shell when offline.
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return res;
+      })
+      .catch(() => caches.match(event.request))
+  );
+});
