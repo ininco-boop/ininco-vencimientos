@@ -384,7 +384,7 @@ const SEED_CISTERNAS = [
 //    FIREBASE_DB_URL below once and every install of this file shares the same data.
 // 2) Claude.ai's own storage — only works while this app is opened inside a Claude.ai chat.
 // 3) This device's local storage — last-resort fallback, not shared with anyone.
-const FIREBASE_DB_URL = ''; // e.g. 'https://ininco-vencimientos-default-rtdb.firebaseio.com'
+const FIREBASE_DB_URL = 'https://ininco-vencimientos-default-rtdb.firebaseio.com'; // e.g. 'https://ininco-vencimientos-default-rtdb.firebaseio.com'
 
 const hasCloud = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
 
