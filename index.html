@@ -4,10 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>ININCO · Control de Vencimientos</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#10161d">
+<link rel="manifest" href="data:application/json,{%22name%22:%22ININCO%20Vencimientos%22,%22display%22:%22standalone%22}">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
@@ -229,6 +226,7 @@ body{
 }
 .save-hint{font-size:11px;color:var(--ok);height:14px;margin-top:6px;opacity:0;transition:opacity .3s;}
 .save-hint.show{opacity:1;}
+#syncToast.show{opacity:1 !important;}
 
 /* ---------- FAB + bottom nav ---------- */
 .bottomnav{
@@ -300,6 +298,7 @@ body{
   <h1>Control de Vencimientos</h1>
   <div class="sub" id="todayLabel"></div>
   <div class="sub" id="syncBadge" style="margin-top:3px;color:var(--muted);"></div>
+  <div class="sub" id="syncToast" style="margin-top:3px;font-weight:600;opacity:0;transition:opacity .3s;"></div>
 </div>
 
 <div id="root">
@@ -388,11 +387,16 @@ const FIREBASE_DB_URL = 'https://ininco-vencimientos-default-rtdb.firebaseio.com
 
 const hasCloud = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
 
+// Tracks keys that failed to save (e.g. no signal at the tank site) so we can retry
+// automatically, and so the background poll never overwrites a change that hasn't
+// made it to the cloud yet.
+const pendingSaves = {}; // { [key]: valueToRetry }
+
 async function storageGet(key){
   if(FIREBASE_DB_URL){
     try{
       const res = await fetch(`${FIREBASE_DB_URL}/${key}.json`);
-      if(!res.ok) throw new Error('firebase get failed');
+      if(!res.ok) throw new Error('firebase get failed: ' + res.status);
       return await res.json();
     }catch(e){ console.error('firebase get error', e); return null; }
   }
@@ -408,36 +412,76 @@ async function storageGet(key){
   }catch(e){ return null; }
 }
 
+// Returns true if the value actually reached shared storage, false otherwise.
 async function storageSet(key, val){
   if(FIREBASE_DB_URL){
     try{
-      await fetch(`${FIREBASE_DB_URL}/${key}.json`, {
+      const res = await fetch(`${FIREBASE_DB_URL}/${key}.json`, {
         method:'PUT',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify(val)
       });
-    }catch(e){ console.error('firebase save error', e); }
-    return;
+      if(!res.ok) throw new Error('firebase set failed: ' + res.status);
+      return true;
+    }catch(e){ console.error('firebase save error', e); return false; }
   }
   if(hasCloud){
-    try{ await window.storage.set(key, JSON.stringify(val), true); }catch(e){ console.error('cloud save failed', e); }
-    return;
+    try{ await window.storage.set(key, JSON.stringify(val), true); return true; }
+    catch(e){ console.error('cloud save failed', e); return false; }
   }
-  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ console.error('local save failed', e); }
+  try{ localStorage.setItem(key, JSON.stringify(val)); return true; }
+  catch(e){ console.error('local save failed', e); return false; }
 }
+
+function showSyncToast(msg, isError){
+  const el = document.getElementById('syncToast');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--ok)';
+  el.classList.add('show');
+  clearTimeout(showSyncToast._t);
+  showSyncToast._t = setTimeout(()=>el.classList.remove('show'), isError ? 4000 : 1600);
+}
+
+// Central save path used by saveTanques/saveCisternas/saveConfig. On failure the
+// key+value is queued in pendingSaves and retried automatically (every 15s, and
+// immediately when the device regains connectivity).
+async function persist(key, val){
+  const ok = await storageSet(key, val);
+  if(ok){
+    delete pendingSaves[key];
+    showSyncToast('☁ Guardado', false);
+  }else{
+    pendingSaves[key] = val;
+    showSyncToast('⚠ Sin conexión — se guardará cuando vuelva la señal', true);
+  }
+}
+
+async function retryPendingSaves(){
+  for(const key of Object.keys(pendingSaves)){
+    const val = pendingSaves[key];
+    const ok = await storageSet(key, val);
+    if(ok){
+      delete pendingSaves[key];
+      showSyncToast('☁ Cambios pendientes sincronizados', false);
+    }
+  }
+}
+window.addEventListener('online', retryPendingSaves);
+setInterval(retryPendingSaves, 15000);
 
 async function loadAll(){
   const t = await storageGet(STORE_TANQUES);
   tanques = t || SEED_TANQUES;
-  if(!t) await storageSet(STORE_TANQUES, tanques);
+  if(!t) await persist(STORE_TANQUES, tanques);
 
   const c = await storageGet(STORE_CISTERNAS);
   cisternas = c || SEED_CISTERNAS;
-  if(!c) await storageSet(STORE_CISTERNAS, cisternas);
+  if(!c) await persist(STORE_CISTERNAS, cisternas);
 
   const cf = migrateConfig(await storageGet(STORE_CONFIG));
   config = cf || { correos:['tuliomong@ininco.com'], dias:7, empresa:'ININCO' };
-  await storageSet(STORE_CONFIG, config);
+  await persist(STORE_CONFIG, config);
 
   document.getElementById('syncBadge').textContent = FIREBASE_DB_URL
     ? '☁ Nube compartida — todos los dispositivos ven lo mismo'
@@ -446,9 +490,9 @@ async function loadAll(){
       : '📱 Guardado solo en este dispositivo';
 }
 
-async function saveTanques(){ await storageSet(STORE_TANQUES, tanques); }
-async function saveCisternas(){ await storageSet(STORE_CISTERNAS, cisternas); }
-async function saveConfig(){ await storageSet(STORE_CONFIG, config); }
+async function saveTanques(){ await persist(STORE_TANQUES, tanques); }
+async function saveCisternas(){ await persist(STORE_CISTERNAS, cisternas); }
+async function saveConfig(){ await persist(STORE_CONFIG, config); }
 
 function daysUntil(dateStr){
   if(!dateStr) return null;
@@ -960,18 +1004,13 @@ document.getElementById('todayLabel').textContent =
 
 loadAll().then(renderCurrent);
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  });
-}
-
 // Background refresh: pull the latest shared data periodically so edits made on
 // other devices show up here too, without disrupting whatever you're doing.
 if(FIREBASE_DB_URL){
   setInterval(async ()=>{
     if(document.activeElement && ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
     if(document.getElementById('modalOverlay')) return;
+    if(Object.keys(pendingSaves).length > 0) return; // don't clobber unsaved local edits
     const [t, c] = await Promise.all([storageGet(STORE_TANQUES), storageGet(STORE_CISTERNAS)]);
     const changed = JSON.stringify(t) !== JSON.stringify(tanques) || JSON.stringify(c) !== JSON.stringify(cisternas);
     if(t) tanques = t;
