@@ -7,7 +7,7 @@
 <link rel="manifest" href="data:application/json,{%22name%22:%22ININCO%20Vencimientos%22,%22display%22:%22standalone%22}">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
-
+ 
 :root{
   --steel-900:#10161d;
   --steel-800:#1a2530;
@@ -34,7 +34,7 @@ body{
   padding-bottom:84px;
 }
 ::selection{background:var(--hazard);color:var(--steel-900);}
-
+ 
 /* ---------- App bar ---------- */
 .appbar{
   position:sticky;top:0;z-index:20;
@@ -60,7 +60,7 @@ body{
 .appbar .sub{
   font-size:12.5px;color:var(--muted);margin-top:2px;
 }
-
+ 
 /* ---------- Stats strip (Resumen) ---------- */
 .stats{
   display:grid;grid-template-columns:repeat(4,1fr);
@@ -79,7 +79,7 @@ body{
 .stat.proximo .n{color:var(--hazard);}
 .stat.vigente .n{color:var(--ok);}
 .stat.tramite .n{color:var(--muted);}
-
+ 
 /* ---------- Filters ---------- */
 .filters{
   display:flex;gap:6px;padding:12px 18px 4px;overflow-x:auto;
@@ -97,13 +97,13 @@ body{
 .filters button.active{
   background:var(--hazard);border-color:var(--hazard);color:var(--steel-900);
 }
-
+ 
 /* ---------- List container ---------- */
 .list{padding:10px 18px 8px;display:flex;flex-direction:column;gap:12px;}
 .empty{
   text-align:center;color:var(--muted);font-size:13px;padding:40px 10px;
 }
-
+ 
 /* ---------- Cards ---------- */
 .card{
   background:var(--steel-800);
@@ -135,7 +135,7 @@ body{
   flex:0 0 auto;
 }
 .del-btn:active{background:var(--danger);color:var(--paper-100);}
-
+ 
 .meta-row{
   display:grid;grid-template-columns:1fr 1fr;gap:8px;
   padding:0 14px 10px;
@@ -154,7 +154,7 @@ body{
 }
 .field input:focus, .field select:focus{border-color:var(--hazard);}
 .field select{font-family:'Inter',sans-serif;}
-
+ 
 /* placard style vencimiento chip */
 .placards{display:flex;gap:8px;padding:2px 14px 14px;flex-wrap:wrap;}
 .placard{
@@ -187,7 +187,7 @@ body{
 .placard.vencido{border-color:var(--danger);}
 .placard.proximo{border-color:var(--hazard);}
 .placard.vigente{border-color:var(--ok);}
-
+ 
 /* resumen list item (compact) */
 .rline{
   display:flex;align-items:center;gap:10px;
@@ -202,7 +202,7 @@ body{
 .rline .rtitle{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .rline .rsub{font-size:11px;color:var(--muted);margin-top:1px;}
 .rline .rdays{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;text-align:right;flex:0 0 auto;}
-
+ 
 /* ---------- Config ---------- */
 .config-block{
   background:var(--steel-800);border:1px solid var(--steel-700);
@@ -227,7 +227,7 @@ body{
 .save-hint{font-size:11px;color:var(--ok);height:14px;margin-top:6px;opacity:0;transition:opacity .3s;}
 .save-hint.show{opacity:1;}
 #syncToast.show{opacity:1 !important;}
-
+ 
 /* ---------- FAB + bottom nav ---------- */
 .bottomnav{
   position:fixed;left:0;right:0;bottom:0;z-index:30;
@@ -242,10 +242,10 @@ body{
 }
 .bottomnav button .ic{font-size:17px;}
 .bottomnav button.active{color:var(--hazard);}
-
+ 
 .hidden{display:none !important;}
 .loading{text-align:center;color:var(--muted);font-size:13px;padding:50px 10px;}
-
+ 
 /* ---------- Modal (guided flows) ---------- */
 .modal-overlay{
   position:fixed;inset:0;z-index:50;
@@ -292,37 +292,37 @@ body{
 </style>
 </head>
 <body>
-
+ 
 <div class="appbar">
-  <div class="eyebrow"><span class="dot"></span>ININCO · PALMIRA Y OPERACIONES</div>
+  <div class="eyebrow"><span class="dot"></span>ININCO · DEPTO. COMBUS Y LUB. TAMB 2026</div>
   <h1>Control de Vencimientos</h1>
   <div class="sub" id="todayLabel"></div>
   <div class="sub" id="syncBadge" style="margin-top:3px;color:var(--muted);"></div>
   <div class="sub" id="syncToast" style="margin-top:3px;font-weight:600;opacity:0;transition:opacity .3s;"></div>
 </div>
-
+ 
 <div id="root">
   <div class="loading">Cargando datos…</div>
 </div>
-
+ 
 <div id="modalRoot"></div>
-
+ 
 <div class="bottomnav">
   <button data-tab="resumen" class="active"><span class="ic">📋</span>Resumen</button>
   <button data-tab="tanques"><span class="ic">🛢️</span>Tanques</button>
   <button data-tab="cisternas"><span class="ic">🚛</span>Cisternas</button>
   <button data-tab="config"><span class="ic">⚙️</span>Config</button>
 </div>
-
+ 
 <script>
 const STORE_TANQUES = 'vencimientos-tanques';
 const STORE_CISTERNAS = 'vencimientos-cisternas';
 const STORE_CONFIG = 'vencimientos-config';
-
+ 
 let tanques = [];
 let cisternas = [];
 let config = { correos:[], dias:7, empresa:'ININCO' };
-
+ 
 function migrateConfig(cf){
   if(!cf) return cf;
   if(!Array.isArray(cf.correos)){
@@ -333,9 +333,9 @@ function migrateConfig(cf){
 }
 let currentTab = 'resumen';
 let currentFilter = 'todos';
-
+ 
 const uid = () => 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
-
+ 
 const SEED_TANQUES = [
   {id:uid(), proyecto:'ININCO - CANTERA EL PUENTE', estado:'ACTIVO',
    en_numero:'MIPRE-2026-0000026', en_fecha:'2026-01-02', en_venc:'2030-01-02',
@@ -365,7 +365,7 @@ const SEED_TANQUES = [
    en_numero:'7319', en_fecha:'2023-02-28', en_venc:'2028-02-28',
    bo_numero:'01-12-22', bo_venc:'2024-07-01'},
 ];
-
+ 
 const SEED_CISTERNAS = [
   {id:uid(), codigo:'10-02', marca:'International', modelo:'4300', placa:'836766', ubicacion:'Cantera El Puente', anual_venc:'2026-08-01', bim_venc:'2026-08-26', obs:''},
   {id:uid(), codigo:'10-04', marca:'Freightliner', modelo:'Century', placa:'833214', ubicacion:'Cantera El Puente', anual_venc:'2027-03-13', bim_venc:'2026-07-14', obs:'Se envía a bomberos'},
@@ -376,7 +376,7 @@ const SEED_CISTERNAS = [
   {id:uid(), codigo:'10-08', marca:'Shacman', modelo:'', placa:'', ubicacion:'Cantera El Puente', anual_venc:'2027-04-22', bim_venc:'2026-08-31', obs:'Espera de bomberos'},
   {id:uid(), codigo:'13-27', marca:'Toyota', modelo:'Land Cruiser', placa:'', ubicacion:'Isla Colón', anual_venc:'2026-07-04', bim_venc:'2026-06-15', obs:'Fuera de circulación (nota 13-6-2026)'},
 ];
-
+ 
 // ---------- Storage tiers (checked in this order) ----------
 // 1) Firebase Realtime Database — real shared cloud, works on any device, any browser,
 //    even the file downloaded and opened standalone or packaged as an app. Configure
@@ -384,14 +384,14 @@ const SEED_CISTERNAS = [
 // 2) Claude.ai's own storage — only works while this app is opened inside a Claude.ai chat.
 // 3) This device's local storage — last-resort fallback, not shared with anyone.
 const FIREBASE_DB_URL = 'https://ininco-vencimientos-default-rtdb.firebaseio.com'; // e.g. 'https://ininco-vencimientos-default-rtdb.firebaseio.com'
-
+ 
 const hasCloud = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
-
+ 
 // Tracks keys that failed to save (e.g. no signal at the tank site) so we can retry
 // automatically, and so the background poll never overwrites a change that hasn't
 // made it to the cloud yet.
 const pendingSaves = {}; // { [key]: valueToRetry }
-
+ 
 async function storageGet(key){
   if(FIREBASE_DB_URL){
     try{
@@ -411,7 +411,7 @@ async function storageGet(key){
     return raw ? JSON.parse(raw) : null;
   }catch(e){ return null; }
 }
-
+ 
 // Returns true if the value actually reached shared storage, false otherwise.
 async function storageSet(key, val){
   if(FIREBASE_DB_URL){
@@ -432,7 +432,7 @@ async function storageSet(key, val){
   try{ localStorage.setItem(key, JSON.stringify(val)); return true; }
   catch(e){ console.error('local save failed', e); return false; }
 }
-
+ 
 function showSyncToast(msg, isError){
   const el = document.getElementById('syncToast');
   if(!el) return;
@@ -442,7 +442,7 @@ function showSyncToast(msg, isError){
   clearTimeout(showSyncToast._t);
   showSyncToast._t = setTimeout(()=>el.classList.remove('show'), isError ? 4000 : 1600);
 }
-
+ 
 // Central save path used by saveTanques/saveCisternas/saveConfig. On failure the
 // key+value is queued in pendingSaves and retried automatically (every 15s, and
 // immediately when the device regains connectivity).
@@ -456,7 +456,7 @@ async function persist(key, val){
     showSyncToast('⚠ Sin conexión — se guardará cuando vuelva la señal', true);
   }
 }
-
+ 
 async function retryPendingSaves(){
   for(const key of Object.keys(pendingSaves)){
     const val = pendingSaves[key];
@@ -469,31 +469,31 @@ async function retryPendingSaves(){
 }
 window.addEventListener('online', retryPendingSaves);
 setInterval(retryPendingSaves, 15000);
-
+ 
 async function loadAll(){
   const t = await storageGet(STORE_TANQUES);
   tanques = t || SEED_TANQUES;
   if(!t) await persist(STORE_TANQUES, tanques);
-
+ 
   const c = await storageGet(STORE_CISTERNAS);
   cisternas = c || SEED_CISTERNAS;
   if(!c) await persist(STORE_CISTERNAS, cisternas);
-
+ 
   const cf = migrateConfig(await storageGet(STORE_CONFIG));
   config = cf || { correos:['tuliomong@ininco.com'], dias:7, empresa:'ININCO' };
   await persist(STORE_CONFIG, config);
-
+ 
   document.getElementById('syncBadge').textContent = FIREBASE_DB_URL
     ? '☁ Nube compartida — todos los dispositivos ven lo mismo'
     : hasCloud
       ? '☁ Guardado en la nube de Claude (compartido)'
       : '📱 Guardado solo en este dispositivo';
 }
-
+ 
 async function saveTanques(){ await persist(STORE_TANQUES, tanques); }
 async function saveCisternas(){ await persist(STORE_CISTERNAS, cisternas); }
 async function saveConfig(){ await persist(STORE_CONFIG, config); }
-
+ 
 function daysUntil(dateStr){
   if(!dateStr) return null;
   const d = new Date(dateStr + 'T00:00:00');
@@ -501,7 +501,7 @@ function daysUntil(dateStr){
   const today = new Date(); today.setHours(0,0,0,0);
   return Math.round((d - today) / 86400000);
 }
-
+ 
 function statusOf(dateStr){
   const days = daysUntil(dateStr);
   if(days === null) return {cls:'tramite', label:'En trámite', days:null};
@@ -510,18 +510,18 @@ function statusOf(dateStr){
   if(days <= anticip) return {cls:'proximo', label:`Vence en ${days} d.`, days};
   return {cls:'vigente', label:`Vence en ${days} d.`, days};
 }
-
+ 
 function fmtDate(dateStr){
   if(!dateStr) return '—';
   const d = new Date(dateStr + 'T00:00:00');
   if(isNaN(d)) return dateStr;
   return d.toLocaleDateString('es-PA', {day:'2-digit', month:'short', year:'numeric'});
 }
-
+ 
 function escapeHtml(s){
   return (s||'').toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
-
+ 
 /* ---------- RENDER: RESUMEN ---------- */
 function renderResumen(){
   const items = [];
@@ -533,10 +533,10 @@ function renderResumen(){
     items.push({title:`${c.codigo} · ${c.marca} ${c.modelo}`, sub:'Bomberos (anual)', ...statusOf(c.anual_venc)});
     items.push({title:`${c.codigo} · ${c.marca} ${c.modelo}`, sub:'Revisión bimestral', ...statusOf(c.bim_venc)});
   });
-
+ 
   const counts = {vencido:0, proximo:0, vigente:0, tramite:0};
   items.forEach(i => counts[i.cls]++);
-
+ 
   let filtered = items;
   if(currentFilter !== 'todos') filtered = items.filter(i => i.cls === currentFilter);
   filtered.sort((a,b) => {
@@ -544,7 +544,7 @@ function renderResumen(){
     const db = b.days === null ? 999999 : b.days;
     return da - db;
   });
-
+ 
   let html = `
   <div class="stats">
     <div class="stat vencido"><div class="n">${counts.vencido}</div><div class="l">Vencidos</div></div>
@@ -558,7 +558,7 @@ function renderResumen(){
     }</button>`).join('')}
   </div>
   <div class="list">`;
-
+ 
   if(filtered.length === 0){
     html += `<div class="empty">Nada que mostrar en este filtro.</div>`;
   }else{
@@ -574,12 +574,12 @@ function renderResumen(){
   }
   html += `</div>`;
   document.getElementById('root').innerHTML = html;
-
+ 
   document.querySelectorAll('.filters button').forEach(b=>{
     b.onclick = () => { currentFilter = b.dataset.filter; renderResumen(); };
   });
 }
-
+ 
 /* ---------- RENDER: TANQUES ---------- */
 function renderTanques(){
   let html = `<div class="list">`;
@@ -618,7 +618,7 @@ function renderTanques(){
   document.getElementById('root').innerHTML = html;
   bindTanqueEvents();
 }
-
+ 
 function bindTanqueEvents(){
   document.querySelectorAll('[data-kind="tanque"]').forEach(card=>{
     const id = card.dataset.id;
@@ -639,7 +639,7 @@ function bindTanqueEvents(){
     });
   });
 }
-
+ 
 /* ---------- RENDER: CISTERNAS ---------- */
 function renderCisternas(){
   let html = `<div class="list">`;
@@ -679,7 +679,7 @@ function renderCisternas(){
   document.getElementById('root').innerHTML = html;
   bindCisternaEvents();
 }
-
+ 
 function bindCisternaEvents(){
   document.querySelectorAll('[data-kind="cisterna"]').forEach(card=>{
     const id = card.dataset.id;
@@ -700,7 +700,7 @@ function bindCisternaEvents(){
     });
   });
 }
-
+ 
 /* ---------- RENDER: CONFIG ---------- */
 function flashSaved(){
   const hint = document.getElementById('saveHint');
@@ -708,10 +708,10 @@ function flashSaved(){
   hint.classList.add('show');
   setTimeout(()=>hint.classList.remove('show'), 1500);
 }
-
+ 
 function renderConfig(){
   if(!Array.isArray(config.correos)) config.correos = [];
-
+ 
   let correosHtml = config.correos.map((email, i) => `
       <div class="config-field" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;">
         <div style="flex:1;">
@@ -720,11 +720,11 @@ function renderConfig(){
         </div>
         <button class="del-btn" data-del-correo="${i}" style="padding-bottom:9px;">✕</button>
       </div>`).join('');
-
+ 
   if(config.correos.length === 0){
     correosHtml = `<div class="empty" style="padding:14px 0;">Sin correos agregados.</div>`;
   }
-
+ 
   const html = `
     <div class="config-block">
       <h3>Acciones rápidas</h3>
@@ -756,11 +756,11 @@ function renderConfig(){
       </div>
     </div>`;
   document.getElementById('root').innerHTML = html;
-
+ 
   document.getElementById('btnActualizarTanque').addEventListener('click', openActualizarTanqueModal);
   document.getElementById('btnActualizarCisterna').addEventListener('click', openActualizarCisternaModal);
   document.getElementById('btnIngresarUnidad').addEventListener('click', openIngresarUnidadModal);
-
+ 
   document.querySelectorAll('[data-correo-idx]').forEach(inp=>{
     inp.addEventListener('change', async (e)=>{
       config.correos[Number(inp.dataset.correoIdx)] = e.target.value;
@@ -768,7 +768,7 @@ function renderConfig(){
       flashSaved();
     });
   });
-
+ 
   document.querySelectorAll('[data-del-correo]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       config.correos.splice(Number(btn.dataset.delCorreo), 1);
@@ -776,7 +776,7 @@ function renderConfig(){
       renderConfig();
     });
   });
-
+ 
   document.getElementById('addCorreoBtn').addEventListener('click', async ()=>{
     config.correos.push('');
     await saveConfig();
@@ -784,7 +784,7 @@ function renderConfig(){
     const inputs = document.querySelectorAll('[data-correo-idx]');
     if(inputs.length) inputs[inputs.length-1].focus();
   });
-
+ 
   ['dias','empresa'].forEach(k=>{
     document.getElementById('cf-'+k).addEventListener('change', async (e)=>{
       config[k] = k==='dias' ? Number(e.target.value) : e.target.value;
@@ -793,7 +793,7 @@ function renderConfig(){
     });
   });
 }
-
+ 
 /* ---------- Modal helper ---------- */
 function openModal(html){
   document.getElementById('modalRoot').innerHTML = `
@@ -807,7 +807,7 @@ function openModal(html){
 function closeModal(){
   document.getElementById('modalRoot').innerHTML = '';
 }
-
+ 
 /* ---------- Acción 1: Actualizar info tanque (equivale a ActualizarTanque) ---------- */
 function openActualizarTanqueModal(){
   if(tanques.length === 0){ alert('No hay tanques registrados todavía.'); return; }
@@ -833,7 +833,7 @@ function openActualizarTanqueModal(){
     </div>
     <button class="mbtn-primary" id="mt-guardar">Guardar cambios</button>
   `);
-
+ 
   const syncCampos = () => {
     const tipo = document.getElementById('mt-tipo').value;
     document.getElementById('mt-camposEnergia').classList.toggle('hidden', tipo !== 'en');
@@ -850,7 +850,7 @@ function openActualizarTanqueModal(){
   document.getElementById('mt-tipo').addEventListener('change', syncCampos);
   document.getElementById('mt-proyecto').addEventListener('change', fillFromSelection);
   fillFromSelection(); syncCampos();
-
+ 
   document.getElementById('mt-guardar').addEventListener('click', async ()=>{
     const t = tanques.find(x => x.id === document.getElementById('mt-proyecto').value);
     const tipo = document.getElementById('mt-tipo').value;
@@ -869,7 +869,7 @@ function openActualizarTanqueModal(){
     else renderConfig();
   });
 }
-
+ 
 /* ---------- Acción 2: Actualizar info cisterna (equivale a ActualizarCertificacion) ---------- */
 function openActualizarCisternaModal(){
   if(cisternas.length === 0){ alert('No hay cisternas registradas todavía.'); return; }
@@ -887,7 +887,7 @@ function openActualizarCisternaModal(){
     <div class="mfield"><label>Nueva fecha de vencimiento</label><input type="date" id="mc-fecha"></div>
     <button class="mbtn-primary" id="mc-guardar">Guardar cambios</button>
   `);
-
+ 
   const fillFromSelection = () => {
     const c = cisternas.find(x => x.id === document.getElementById('mc-unidad').value);
     const tipo = document.getElementById('mc-tipo').value;
@@ -896,7 +896,7 @@ function openActualizarCisternaModal(){
   document.getElementById('mc-unidad').addEventListener('change', fillFromSelection);
   document.getElementById('mc-tipo').addEventListener('change', fillFromSelection);
   fillFromSelection();
-
+ 
   document.getElementById('mc-guardar').addEventListener('click', async ()=>{
     const c = cisternas.find(x => x.id === document.getElementById('mc-unidad').value);
     const tipo = document.getElementById('mc-tipo').value;
@@ -909,7 +909,7 @@ function openActualizarCisternaModal(){
     else renderConfig();
   });
 }
-
+ 
 /* ---------- Acción 3: Ingresar unidad nueva TP o cisterna (equivale a AgregarUnidad) ---------- */
 function openIngresarUnidadModal(){
   openModal(`
@@ -939,12 +939,12 @@ function openIngresarUnidadModal(){
     </div>
     <button class="mbtn-primary" id="mu-guardar">Agregar unidad</button>
   `);
-
+ 
   document.getElementById('mu-tipo').addEventListener('change', (e)=>{
     document.getElementById('mu-formTanque').classList.toggle('hidden', e.target.value !== 'tanque');
     document.getElementById('mu-formCisterna').classList.toggle('hidden', e.target.value !== 'cisterna');
   });
-
+ 
   document.getElementById('mu-guardar').addEventListener('click', async ()=>{
     const tipo = document.getElementById('mu-tipo').value;
     if(tipo === 'tanque'){
@@ -980,7 +980,7 @@ function openIngresarUnidadModal(){
     }
   });
 }
-
+ 
 /* ---------- Tab switching ---------- */
 function renderCurrent(){
   if(currentTab==='resumen') renderResumen();
@@ -988,7 +988,7 @@ function renderCurrent(){
   else if(currentTab==='cisternas') renderCisternas();
   else if(currentTab==='config') renderConfig();
 }
-
+ 
 document.querySelectorAll('.bottomnav button').forEach(b=>{
   b.addEventListener('click', ()=>{
     currentTab = b.dataset.tab;
@@ -998,12 +998,12 @@ document.querySelectorAll('.bottomnav button').forEach(b=>{
     renderCurrent();
   });
 });
-
+ 
 document.getElementById('todayLabel').textContent =
   'Hoy: ' + new Date().toLocaleDateString('es-PA', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
-
+ 
 loadAll().then(renderCurrent);
-
+ 
 // Background refresh: pull the latest shared data periodically so edits made on
 // other devices show up here too, without disrupting whatever you're doing.
 if(FIREBASE_DB_URL){
@@ -1021,3 +1021,4 @@ if(FIREBASE_DB_URL){
 </script>
 </body>
 </html>
+ 
